@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rendementscalculator met box 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A4A;
+    --ink-soft:#3D4F73;
+    --paper:#FAF7F0;
+    --paper-deep:#F1ECE0;
+    --line:#DCD5C2;
+    --gold:#C08A2E;
+    --gold-soft:#E8D5AE;
+    --sage:#5C7A5C;
+    --sage-soft:#D7E2D2;
+    --error:#A8443B;
+    --tax:#A8443B;
+    --tax-soft:#E8CFC9;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    margin-bottom:40px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:28px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(28px, 4vw, 42px);
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:15px;
+    max-width:560px;
+  }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:32px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  /* ---------- Input panel ---------- */
+  .panel{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:28px 26px;
+  }
+  .panel h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--ink-soft);
+    margin:0 0 20px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .panel h2.second{margin-top:28px;}
+  .field{margin-bottom:20px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:8px;
+  }
+  .field label .unit{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:400;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .field input[type="number"]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:15px;
+    color:var(--ink);
+    background:var(--paper);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .field input[type="number"]:focus{
+    outline:none;
+    border-color:var(--gold);
+    background:white;
+  }
+  .field input[type="range"]{
+    width:100%;
+    margin-top:10px;
+    accent-color:var(--gold);
+  }
+  .field .err{
+    font-size:12px;
+    color:var(--error);
+    margin-top:6px;
+    display:none;
+  }
+  .field.has-error input[type="number"]{
+    border-color:var(--error);
+  }
+  .field.has-error .err{display:block;}
+  .field .help{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+    line-height:1.4;
+  }
+
+  .compounding-group{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .compounding-group button{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 6px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    border-radius:2px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .compounding-group button.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:white;
+  }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .toggle-row .toggle-label{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .toggle-row .toggle-sub{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:400;
+    margin-top:2px;
+  }
+  .switch{
+    position:relative;
+    width:42px;
+    height:24px;
+    flex-shrink:0;
+  }
+  .switch input{opacity:0; width:0; height:0;}
+  .switch .slider{
+    position:absolute; inset:0;
+    background:#C9C2AC;
+    border-radius:24px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .switch .slider::before{
+    content:"";
+    position:absolute;
+    width:18px; height:18px;
+    left:3px; top:3px;
+    background:white;
+    border-radius:50%;
+    transition:transform .15s ease;
+  }
+  .switch input:checked + .slider{background:var(--tax);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+
+  .box3-fields{
+    border-top:1px solid var(--line);
+    padding-top:18px;
+    margin-top:2px;
+  }
+  .box3-fields.disabled{opacity:0.4; pointer-events:none;}
+
+  /* ---------- Results ---------- */
+  .results{display:flex; flex-direction:column; gap:24px;}
+
+  .hero{
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:2px;
+    padding:32px 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    top:0; right:0;
+    width:220px; height:220px;
+    background:radial-gradient(circle at top right, rgba(192,138,46,0.18), transparent 70%);
+  }
+  .hero-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+    margin-bottom:10px;
+  }
+  .hero-value{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(40px, 6vw, 64px);
+    line-height:1;
+    letter-spacing:-0.01em;
+    margin-bottom:22px;
+  }
+
+  .ledger-bar{
+    height:10px;
+    border-radius:6px;
+    overflow:hidden;
+    display:flex;
+    background:rgba(255,255,255,0.1);
+    margin-bottom:14px;
+  }
+  .ledger-bar .seg-principal{background:#8C97AE;}
+  .ledger-bar .seg-contrib{background:var(--gold);}
+  .ledger-bar .seg-interest{background:#7FAE6E;}
+  .ledger-bar .seg-tax{background:var(--tax);}
+
+  .ledger-legend{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    font-size:13px;
+  }
+  .ledger-legend .item{display:flex; align-items:center; gap:7px; color:rgba(250,247,240,0.85);}
+  .ledger-legend .swatch{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .ledger-legend .swatch.principal{background:#8C97AE;}
+  .ledger-legend .swatch.contrib{background:var(--gold);}
+  .ledger-legend .swatch.interest{background:#7FAE6E;}
+  .ledger-legend .swatch.tax{background:var(--tax);}
+  .ledger-legend .item b{color:white; font-weight:600;}
+
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+  }
+  .stat-row.no-tax{grid-template-columns:repeat(3, 1fr);}
+  @media (max-width:680px){
+    .stat-row{grid-template-columns:repeat(2, 1fr);}
+  }
+  .stat{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:18px 16px;
+  }
+  .stat .stat-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+  .stat .stat-value{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    font-weight:500;
+  }
+  .stat.principal .stat-value{color:var(--ink);}
+  .stat.contrib .stat-value{color:#9A6B1F;}
+  .stat.interest .stat-value{color:var(--sage);}
+  .stat.tax .stat-value{color:var(--tax);}
+
+  /* ---------- Chart panels ---------- */
+  .chart-panel{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:24px 24px 8px;
+  }
+  .chart-panel h3{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    margin:0 0 4px;
+  }
+  .chart-panel .sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  .chart-panel canvas{width:100%; display:block;}
+
+  /* ---------- Tabel ---------- */
+  .table-panel{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:24px 24px;
+  }
+  .table-panel h3{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    margin:0 0 4px;
+  }
+  .table-panel .sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  .table-scroll{
+    max-height:340px;
+    overflow-y:auto;
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:2px;
+  }
+  table{
+    width:100%;
+    min-width:720px;
+    border-collapse:collapse;
+    font-size:12.5px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Source Sans 3', sans-serif;
+    font-weight:600;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    padding:9px 10px;
+    text-align:right;
+    white-space:nowrap;
+  }
+  thead th:first-child{text-align:left;}
+  tbody td{
+    padding:7px 10px;
+    text-align:right;
+    border-bottom:1px solid var(--paper-deep);
+    white-space:nowrap;
+  }
+  tbody td:first-child{text-align:left; font-family:'Source Sans 3', sans-serif; font-weight:600;}
+  tbody tr:nth-child(even){background:var(--paper);}
+  tbody td.tax-col{color:var(--tax);}
+
+  footer{
+    margin-top:48px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  footer p{margin:0 0 8px;}
+  footer p:last-child{margin-bottom:0;}
+
+  /* tooltip */
+  .tooltip{
+    position:absolute;
+    pointer-events:none;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    padding:8px 11px;
+    border-radius:3px;
+    line-height:1.5;
+    opacity:0;
+    transition:opacity .1s ease;
+    z-index:10;
+    white-space:nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Grootboek · Rendement op vermogen</div>
+    <h1>Rendementscalculator met box 3</h1>
+    <p>Vul je startkapitaal, maandelijkse inleg en rendement in. Kies of de box 3-belasting wordt verrekend over het forfaitaire (fictieve) rendement of over je werkelijk behaalde rendement.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- INVOERPANEEL -->
+    <div class="panel">
+      <h2>Jouw invoer</h2>
+
+      <div class="field" id="field-capital">
+        <label>Startkapitaal <span class="unit">€</span></label>
+        <input type="number" id="capital" value="10000" min="0" step="100">
+        <div class="err">Vul een waarde van 0 of hoger in.</div>
+      </div>
+
+      <div class="field" id="field-monthly">
+        <label>Maandelijkse inleg <span class="unit">€ / maand</span></label>
+        <input type="number" id="monthly" value="200" min="0" step="10">
+        <div class="err">Vul een waarde van 0 of hoger in.</div>
+      </div>
+
+      <div class="field" id="field-rate">
+        <label>Jaarlijks rendement <span class="unit">%</span></label>
+        <input type="number" id="rate" value="7" min="0" max="100" step="0.1">
+        <input type="range" id="rate-slider" min="0" max="15" step="0.1" value="7">
+        <div class="err">Vul een waarde tussen 0 en 100 in.</div>
+      </div>
+
+      <div class="field" id="field-years">
+        <label>Looptijd <span class="unit">jaar</span></label>
+        <input type="number" id="years" value="20" min="1" max="60" step="1">
+        <input type="range" id="years-slider" min="1" max="50" step="1" value="20">
+        <div class="err">Vul een geheel aantal jaren tussen 1 en 60 in.</div>
+      </div>
+
+      <div class="field">
+        <label>Rendement bijschrijven</label>
+        <div class="compounding-group" id="compounding">
+          <button data-n="12" class="active">Maandelijks</button>
+          <button data-n="4">Per kwartaal</button>
+          <button data-n="1">Jaarlijks</button>
+          <button data-n="365">Dagelijks</button>
+        </div>
+      </div>
+
+      <h2 class="second">Box 3 belasting</h2>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Box 3 verrekenen</div>
+          <div class="toggle-sub">Belasting wordt jaarlijks van het saldo afgetrokken</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="box3-enabled" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="box3-fields" id="box3-fields">
+        <div class="field">
+          <label>Belastinggrondslag</label>
+          <div class="compounding-group" id="methode">
+            <button data-m="forfait" class="active">Forfaitair rendement</button>
+            <button data-m="werkelijk">Werkelijk rendement</button>
+          </div>
+          <div class="help" id="methode-help">Huidige wet (t/m 2027): belast een vast fictief rendement, los van wat je werkelijk behaalt.</div>
+        </div>
+
+        <div class="field" id="field-hvv">
+          <label>Heffingsvrij vermogen <span class="unit">€</span></label>
+          <input type="number" id="hvv" value="59357" min="0" step="100">
+          <div class="err">Vul een waarde van 0 of hoger in.</div>
+          <div class="help">Standaard 2026: € 59.357 per persoon.</div>
+        </div>
+
+        <div class="field" id="field-cpi">
+          <label>Indexering heffingsvrij vermogen <span class="unit">% CPI / jaar</span></label>
+          <input type="number" id="cpi" value="2.2" min="0" max="20" step="0.1">
+          <div class="err">Vul een waarde tussen 0 en 20 in.</div>
+        </div>
+
+        <div class="field" id="field-forfait">
+          <label>Forfaitair rendement <span class="unit">%</span></label>
+          <input type="number" id="forfait" value="1.28" min="0" max="20" step="0.01">
+          <div class="help">Standaard 2026 voor banktegoeden: 1,28%. Voor beleggingen geldt 6,00%. Niet van toepassing bij "werkelijk rendement".</div>
+        </div>
+
+        <div class="field" id="field-box3rate" style="margin-bottom:0;">
+          <label>Belastingtarief box 3 <span class="unit">%</span></label>
+          <input type="number" id="box3rate" value="36" min="0" max="100" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTATEN -->
+    <div class="results">
+
+      <div class="hero">
+        <div class="hero-label">Saldo na <span id="hero-years">20</span> jaar (netto)</div>
+        <div class="hero-value" id="hero-value">€0</div>
+
+        <div class="ledger-bar">
+          <div class="seg-principal" id="seg-principal" style="width:25%"></div>
+          <div class="seg-contrib" id="seg-contrib" style="width:25%"></div>
+          <div class="seg-interest" id="seg-interest" style="width:25%"></div>
+          <div class="seg-tax" id="seg-tax" style="width:25%"></div>
+        </div>
+        <div class="ledger-legend">
+          <div class="item"><span class="swatch principal"></span>Startkapitaal: <b id="legend-principal">€0</b></div>
+          <div class="item"><span class="swatch contrib"></span>Inleg: <b id="legend-contrib">€0</b></div>
+          <div class="item"><span class="swatch interest"></span>Rendement: <b id="legend-interest">€0</b></div>
+          <div class="item" id="legend-tax-row"><span class="swatch tax"></span>Box 3 belasting: <b id="legend-tax">€0</b></div>
+        </div>
+      </div>
+
+      <div class="stat-row" id="stat-row">
+        <div class="stat principal">
+          <div class="stat-label">Totaal ingelegd</div>
+          <div class="stat-value" id="stat-paidin">€0</div>
+        </div>
+        <div class="stat interest">
+          <div class="stat-label">Rendement bruto</div>
+          <div class="stat-value" id="stat-interest-bruto">€0</div>
+        </div>
+        <div class="stat tax" id="stat-tax-card">
+          <div class="stat-label">Box 3 belasting</div>
+          <div class="stat-value" id="stat-tax">€0</div>
+        </div>
+        <div class="stat contrib">
+          <div class="stat-label">Netto rendement</div>
+          <div class="stat-value" id="stat-return">0%</div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <h3>Vermogensgroei</h3>
+        <p class="sub">Saldo aan het einde van elk jaar, na box 3-belasting, bijschrijven <span id="chart1-freq">maandelijks</span>.</p>
+        <canvas id="chart-growth" height="280"></canvas>
+      </div>
+
+      <div class="chart-panel">
+        <h3>Waar het saldo vandaan komt</h3>
+        <p class="sub">Cumulatieve inleg, rendement en afgedragen belasting, jaar voor jaar.</p>
+        <canvas id="chart-stack" height="280"></canvas>
+      </div>
+
+      <div class="table-panel">
+        <h3>Jaaroverzicht</h3>
+        <p class="sub">Peildatum 1 januari per jaar. Het heffingsvrij vermogen wordt na elk jaar geïndexeerd.</p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Jaar</th>
+                <th>Startsaldo</th>
+                <th>Inleg</th>
+                <th>Rendement bruto</th>
+                <th>Heffingsvrij verm.</th>
+                <th>Belastbaar rendement</th>
+                <th>Box 3 belasting</th>
+                <th>Eindsaldo netto</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>Alle bedragen zijn een illustratieve projectie, geen financieel advies en geen garantie voor toekomstig rendement. Het rendement wordt bijgeschreven op de gekozen frequentie; de maandelijkse inleg wordt gelijkmatig over het jaar verspreid toegevoegd. Bedragen in euro's (€).</p>
+    <p><b>Forfaitair rendement</b> is de huidige wettelijke methode (t/m belastingjaar 2027): de Belastingdienst belast een vast, fictief rendementspercentage over je vermogen boven het heffingsvrij vermogen, los van wat je werkelijk behaalt. <b>Werkelijk rendement</b> belast in plaats daarvan het rendement dat je dit jaar daadwerkelijk hebt ingevoerd, naar verhouding van het deel van je vermogen dat boven het heffingsvrij vermogen uitkomt — dit benadert hoe andere rekentools het soms doen, en hoe het toekomstige stelsel (verwacht vanaf 2028) gaat werken.</p>
+    <p>De box 3-berekening gebruikt de peildatum van 1 januari per jaar (startsaldo van dat jaar) en trekt de belasting aan het einde van datzelfde jaar van het saldo af, zodat het volgende jaar verder rekent met het nettosaldo. Het heffingsvrij vermogen wordt jaarlijks geïndexeerd met het ingevoerde CPI-percentage. Dit is een vereenvoudigde benadering van de werkelijke box 3-regels (één vermogenscategorie, geen schulden, geen fiscaal partner, geen tegenbewijsregeling) en dient alleen ter indicatie.</p>
+  </footer>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ---------- Getalnotatie (EUR, nl-NL: 1.234,56) ----------
+const fmtEUR = (v, decimals = 0) => new Intl.NumberFormat('nl-NL', {
+  style: 'currency', currency: 'EUR',
+  minimumFractionDigits: decimals, maximumFractionDigits: decimals
+}).format(v);
+
+const fmtPct = (v) => new Intl.NumberFormat('nl-NL', {
+  style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1
+}).format(v);
+
+const fmtNum = (v, decimals = 0) => new Intl.NumberFormat('nl-NL', {
+  minimumFractionDigits: decimals, maximumFractionDigits: decimals
+}).format(v);
+
+// ---------- State ----------
+let state = {
+  capital: 10000,
+  monthly: 200,
+  rate: 7,
+  years: 20,
+  freq: 12,
+  box3Enabled: true,
+  box3Method: 'forfait', // 'forfait' = forfaitair rendement (huidige wet), 'werkelijk' = werkelijk behaald rendement
+  hvv: 59357,
+  cpi: 2.2,
+  forfait: 1.28,
+  box3rate: 36
+};
+
+// ---------- Kernrekenlogica ----------
+// Per jaar:
+//   1. Startsaldo (peildatum 1 januari) groeit bruto via samengestelde rente
+//      op de gekozen frequentie, plus maandelijkse inleg (annuïteit).
+//   2. Box 3, methode "forfait" (huidige wet t/m 2027):
+//      grondslag = max(0, startsaldo - heffingsvrij vermogen).
+//      Forfaitair rendement = grondslag x forfait%. Belasting = dat x tarief%.
+//      Dit fictieve rendement staat los van het werkelijk behaalde rendement.
+//   2. Box 3, methode "werkelijk" (zoals het toekomstige stelsel, en zoals
+//      sommige andere rekentools het benaderen): het werkelijk behaalde
+//      rendement van dit jaar wordt belast, naar verhouding van het deel
+//      van het (eind)vermogen dat boven het heffingsvrij vermogen uitkomt.
+//   3. Belasting wordt aan het einde van het jaar van het bruto eindsaldo afgetrokken.
+//   4. Het heffingsvrij vermogen wordt na dit jaar geïndexeerd met CPI% voor
+//      gebruik in het volgende jaar.
+function buildSchedule(capital, monthly, ratePct, years, freq, box3) {
+  const r = ratePct / 100;
+  const schedule = [];
+  let balance = capital;
+  let cumContrib = 0;
+  let cumInterestBruto = 0;
+  let cumTax = 0;
+  let hvv = box3.enabled ? box3.hvv : 0;
+
+  const effMonthlyRate = Math.pow(1 + r / freq, freq / 12) - 1;
+
+  for (let y = 1; y <= years; y++) {
+    const startBalance = balance; // peildatum 1 januari van dit jaar
+
+    const grownStart = startBalance * Math.pow(1 + r / freq, freq);
+
+    let contribFV = 0;
+    if (monthly > 0) {
+      if (effMonthlyRate === 0) {
+        contribFV = monthly * 12;
+      } else {
+        contribFV = monthly * ((Math.pow(1 + effMonthlyRate, 12) - 1) / effMonthlyRate);
+      }
+    }
+
+    const endBruto = grownStart + contribFV;
+    const yearContrib = monthly * 12;
+    const yearInterestBruto = endBruto - startBalance - yearContrib;
+
+    let grondslag = 0, forfaitairRendement = 0, belasting = 0, belastbaarRendement = 0, aandeel = 0;
+    if (box3.enabled) {
+      if (box3.method === 'werkelijk') {
+        // Aandeel van het eindvermogen (vóór belasting) dat boven het heffingsvrij vermogen valt
+        grondslag = Math.max(0, endBruto - hvv);
+        aandeel = endBruto > 0 ? grondslag / endBruto : 0;
+        belastbaarRendement = yearInterestBruto * aandeel;
+        belasting = belastbaarRendement * (box3.rate / 100);
+      } else {
+        grondslag = Math.max(0, startBalance - hvv);
+        forfaitairRendement = grondslag * (box3.forfait / 100);
+        belastbaarRendement = forfaitairRendement;
+        belasting = forfaitairRendement * (box3.rate / 100);
+      }
+    }
+
+    const endNetto = endBruto - belasting;
+
+    cumContrib += yearContrib;
+    cumInterestBruto += yearInterestBruto;
+    cumTax += belasting;
+
+    schedule.push({
+      year: y,
+      startBalance,
+      hvv,
+      contrib: yearContrib,
+      interestBruto: yearInterestBruto,
+      grondslag,
+      belastbaarRendement,
+      tax: belasting,
+      endBruto,
+      endNetto,
+      cumContrib,
+      cumInterestBruto,
+      cumTax
+    });
+
+    balance = endNetto;
+    if (box3.enabled) hvv = hvv * (1 + box3.cpi / 100);
+  }
+  return schedule;
+}
+
+// ---------- Validatie ----------
+function validate() {
+  let valid = true;
+  const checks = [
+    { id: 'capital', test: v => v >= 0 },
+    { id: 'monthly', test: v => v >= 0 },
+    { id: 'rate', test: v => v >= 0 && v <= 100 },
+    { id: 'years', test: v => v >= 1 && v <= 60 && Number.isInteger(v) }
+  ];
+  if (document.getElementById('box3-enabled').checked) {
+    checks.push({ id: 'hvv', test: v => v >= 0 });
+    checks.push({ id: 'cpi', test: v => v >= 0 && v <= 20 });
+    checks.push({ id: 'box3rate', test: v => v >= 0 && v <= 100 });
+  }
+  checks.forEach(({ id, test }) => {
+    const el = document.getElementById(id);
+    const field = document.getElementById('field-' + id);
+    const val = parseFloat(el.value);
+    const ok = !isNaN(val) && test(val);
+    if (field) field.classList.toggle('has-error', !ok);
+    if (!ok) valid = false;
+  });
+  return valid;
+}
+
+// ---------- Render ----------
+function render() {
+  if (!validate()) return;
+
+  state.capital = parseFloat(document.getElementById('capital').value);
+  state.monthly = parseFloat(document.getElementById('monthly').value);
+  state.rate = parseFloat(document.getElementById('rate').value);
+  state.years = parseInt(document.getElementById('years').value);
+  state.box3Enabled = document.getElementById('box3-enabled').checked;
+  state.box3Method = document.querySelector('#methode button.active').dataset.m;
+  state.hvv = parseFloat(document.getElementById('hvv').value) || 0;
+  state.cpi = parseFloat(document.getElementById('cpi').value) || 0;
+  state.forfait = parseFloat(document.getElementById('forfait').value) || 0;
+  state.box3rate = parseFloat(document.getElementById('box3rate').value) || 0;
+
+  document.getElementById('box3-fields').classList.toggle('disabled', !state.box3Enabled);
+  document.getElementById('field-forfait').style.display = state.box3Method === 'werkelijk' ? 'none' : 'block';
+
+  const schedule = buildSchedule(state.capital, state.monthly, state.rate, state.years, state.freq, {
+    enabled: state.box3Enabled,
+    method: state.box3Method,
+    hvv: state.hvv,
+    cpi: state.cpi,
+    forfait: state.forfait,
+    rate: state.box3rate
+  });
+  const final = schedule[schedule.length - 1];
+
+  const totalPaidIn = state.capital + final.cumContrib;
+  const totalInterestBruto = final.cumInterestBruto;
+  const totalTax = final.cumTax;
+  const finalBalance = final.endNetto;
+  const netReturn = totalPaidIn > 0 ? (totalInterestBruto - totalTax) / totalPaidIn : 0;
+
+  // Hero
+  document.getElementById('hero-years').textContent = state.years;
+  document.getElementById('hero-value').textContent = fmtEUR(finalBalance);
+
+  const pVal = state.capital;
+  const cVal = final.cumContrib;
+  const iVal = Math.max(0, totalInterestBruto - totalTax);
+  const tVal = totalTax;
+  const total = Math.max(1, pVal + cVal + iVal + tVal);
+
+  document.getElementById('seg-principal').style.width = (pVal / total * 100) + '%';
+  document.getElementById('seg-contrib').style.width = (cVal / total * 100) + '%';
+  document.getElementById('seg-interest').style.width = (iVal / total * 100) + '%';
+  document.getElementById('seg-tax').style.width = state.box3Enabled ? (tVal / total * 100) + '%' : '0%';
+  document.getElementById('legend-tax-row').style.display = state.box3Enabled ? 'flex' : 'none';
+
+  document.getElementById('legend-principal').textContent = fmtEUR(pVal);
+  document.getElementById('legend-contrib').textContent = fmtEUR(cVal);
+  document.getElementById('legend-interest').textContent = fmtEUR(iVal);
+  document.getElementById('legend-tax').textContent = fmtEUR(tVal);
+
+  document.getElementById('stat-paidin').textContent = fmtEUR(totalPaidIn);
+  document.getElementById('stat-interest-bruto').textContent = fmtEUR(totalInterestBruto);
+  document.getElementById('stat-tax').textContent = fmtEUR(totalTax);
+  document.getElementById('stat-return').textContent = fmtPct(netReturn);
+
+  document.getElementById('stat-tax-card').style.display = state.box3Enabled ? 'block' : 'none';
+  document.getElementById('stat-row').classList.toggle('no-tax', !state.box3Enabled);
+
+  const freqLabel = { 12: 'maandelijks', 4: 'per kwartaal', 1: 'jaarlijks', 365: 'dagelijks' }[state.freq];
+  document.getElementById('chart1-freq').textContent = freqLabel;
+
+  drawGrowthChart(schedule);
+  drawStackChart(schedule);
+  renderTable(schedule);
+}
+
+// ---------- Jaaroverzicht tabel ----------
+function renderTable(schedule) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  schedule.forEach(pt => {
+    const tr = document.createElement('tr');
+    if (state.box3Enabled) {
+      tr.innerHTML = `
+        <td>${pt.year}</td>
+        <td>${fmtEUR(pt.startBalance)}</td>
+        <td>${fmtEUR(pt.contrib)}</td>
+        <td>${fmtEUR(pt.interestBruto)}</td>
+        <td>${fmtEUR(pt.hvv)}</td>
+        <td>${fmtEUR(pt.belastbaarRendement)}</td>
+        <td class="tax-col">${fmtEUR(pt.tax)}</td>
+        <td>${fmtEUR(pt.endNetto)}</td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${pt.year}</td>
+        <td>${fmtEUR(pt.startBalance)}</td>
+        <td>${fmtEUR(pt.contrib)}</td>
+        <td>${fmtEUR(pt.interestBruto)}</td>
+        <td>—</td>
+        <td>—</td>
+        <td class="tax-col">—</td>
+        <td>${fmtEUR(pt.endNetto)}</td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- Canvas grafieken (geen externe libs) ----------
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssWidth = rect.width || canvas.parentElement.clientWidth;
+  const cssHeight = parseInt(canvas.getAttribute('height')) || 280;
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: cssWidth, h: cssHeight };
+}
+
+function niceMax(v) {
+  if (v <= 0) return 100;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1;
+  else if (norm <= 2) step = 2;
+  else if (norm <= 5) step = 5;
+  else step = 10;
+  return step * mag;
+}
+
+function xTicksStep(n, plotW) {
+  const minPxPerLabel = 46;
+  const maxLabels = Math.max(2, Math.floor(plotW / minPxPerLabel));
+  return Math.max(1, Math.ceil((n - 1) / (maxLabels - 1 || 1)));
+}
+
+function drawGrowthChart(schedule) {
+  const canvas = document.getElementById('chart-growth');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const padL = 70, padR = 16, padT = 16, padB = 32;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  const maxVal = niceMax(schedule[schedule.length - 1].endNetto * 1.08);
+  const n = schedule.length;
+
+  const xFor = i => padL + (plotW * i) / (n - 1 || 1);
+  const yFor = v => padT + plotH - (plotH * v) / maxVal;
+
+  ctx.strokeStyle = '#DCD5C2';
+  ctx.lineWidth = 1;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#3D4F73';
+  const gridSteps = 4;
+  for (let g = 0; g <= gridSteps; g++) {
+    const val = (maxVal / gridSteps) * g;
+    const y = yFor(val);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(w - padR, y);
+    ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtCompactEUR(val), padL - 8, y + 4);
+  }
+
+  ctx.textAlign = 'center';
+  const step = xTicksStep(n, plotW);
+  for (let i = 0; i < n; i += step) {
+    ctx.fillText('J' + schedule[i].year, xFor(i), h - padB + 18);
+  }
+  if ((n - 1) % step !== 0) {
+    ctx.fillText('J' + schedule[n - 1].year, xFor(n - 1), h - padB + 18);
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(xFor(0), yFor(schedule[0].endNetto));
+  schedule.forEach((pt, i) => ctx.lineTo(xFor(i), yFor(pt.endNetto)));
+  ctx.lineTo(xFor(n - 1), yFor(0));
+  ctx.lineTo(xFor(0), yFor(0));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+  grad.addColorStop(0, 'rgba(192,138,46,0.22)');
+  grad.addColorStop(1, 'rgba(192,138,46,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(xFor(0), yFor(schedule[0].endNetto));
+  schedule.forEach((pt, i) => ctx.lineTo(xFor(i), yFor(pt.endNetto)));
+  ctx.strokeStyle = '#C08A2E';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  attachHover(canvas, schedule, xFor, (pt) => {
+    let txt = `Jaar ${pt.year}\nSaldo (netto): ${fmtEUR(pt.endNetto)}`;
+    if (state.box3Enabled) txt += `\nBox 3 belasting dit jaar: ${fmtEUR(pt.tax)}`;
+    return txt;
+  });
+}
+
+function drawStackChart(schedule) {
+  const canvas = document.getElementById('chart-stack');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const padL = 70, padR = 16, padT = 16, padB = 32;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  const n = schedule.length;
+  const last = schedule[n - 1];
+  const netInterestFinal = Math.max(0, last.cumInterestBruto - last.cumTax);
+  const maxVal = niceMax((state.capital + last.cumContrib + netInterestFinal + last.cumTax) * 1.08);
+
+  const barGap = 2;
+  const barW = Math.max(2, plotW / n - barGap);
+
+  const yFor = v => padT + plotH - (plotH * v) / maxVal;
+
+  ctx.strokeStyle = '#DCD5C2';
+  ctx.lineWidth = 1;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#3D4F73';
+  const gridSteps = 4;
+  for (let g = 0; g <= gridSteps; g++) {
+    const val = (maxVal / gridSteps) * g;
+    const y = yFor(val);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(w - padR, y);
+    ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtCompactEUR(val), padL - 8, y + 4);
+  }
+
+  const step = xTicksStep(n, plotW);
+  ctx.textAlign = 'center';
+
+  const bars = [];
+  for (let i = 0; i < n; i++) {
+    const pt = schedule[i];
+    const x = padL + i * (plotW / n) + barGap / 2;
+
+    const principalVal = state.capital;
+    const contribVal = pt.cumContrib;
+    const interestNetVal = Math.max(0, pt.cumInterestBruto - pt.cumTax);
+    const taxVal = pt.cumTax;
+
+    const yPrincipalTop = yFor(principalVal);
+    const yContribTop = yFor(principalVal + contribVal);
+    const yInterestTop = yFor(principalVal + contribVal + interestNetVal);
+    const yTaxTop = yFor(principalVal + contribVal + interestNetVal + taxVal);
+    const yBase = yFor(0);
+
+    ctx.fillStyle = '#8C97AE';
+    ctx.fillRect(x, yPrincipalTop, barW, yBase - yPrincipalTop);
+
+    ctx.fillStyle = '#C08A2E';
+    ctx.fillRect(x, yContribTop, barW, yPrincipalTop - yContribTop);
+
+    ctx.fillStyle = '#7FAE6E';
+    ctx.fillRect(x, yInterestTop, barW, yContribTop - yInterestTop);
+
+    if (state.box3Enabled) {
+      ctx.fillStyle = '#A8443B';
+      ctx.fillRect(x, yTaxTop, barW, yInterestTop - yTaxTop);
+    }
+
+    bars.push({ x, width: barW, pt });
+
+    const showLabel = (i % step === 0) || (i === n - 1 && (n - 1) % step !== 0);
+    if (showLabel) {
+      ctx.fillStyle = '#3D4F73';
+      ctx.fillText('J' + pt.year, x + barW / 2, h - padB + 18);
+    }
+  }
+
+  attachHoverBars(canvas, bars, (pt) => {
+    let txt = `Jaar ${pt.year}\nKapitaal: ${fmtEUR(state.capital)}\nInleg: ${fmtEUR(pt.cumContrib)}\nRendement (netto): ${fmtEUR(Math.max(0, pt.cumInterestBruto - pt.cumTax))}`;
+    if (state.box3Enabled) txt += `\nBox 3 belasting (cum.): ${fmtEUR(pt.cumTax)}`;
+    return txt;
+  });
+}
+
+function fmtCompactEUR(v) {
+  if (Math.abs(v) >= 1000000) return '€' + (v / 1000000).toFixed(1) + 'M';
+  if (Math.abs(v) >= 1000) return '€' + Math.round(v / 1000) + 'k';
+  return '€' + Math.round(v);
+}
+
+// ---------- Hover tooltips ----------
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(x, y, text) {
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+  tooltip.textContent = '';
+  text.split('\n').forEach((line, idx) => {
+    const div = document.createElement('div');
+    div.textContent = line;
+    if (idx === 0) div.style.opacity = '0.7';
+    tooltip.appendChild(div);
+  });
+  tooltip.style.opacity = '1';
+}
+function hideTooltip() { tooltip.style.opacity = '0'; }
+
+function attachHover(canvas, schedule, xFor, textFn) {
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const n = schedule.length;
+    let closest = 0, minDist = Infinity;
+    for (let i = 0; i < n; i++) {
+      const d = Math.abs(xFor(i) - mx);
+      if (d < minDist) { minDist = d; closest = i; }
+    }
+    const pt = schedule[closest];
+    showTooltip(e.clientX + window.scrollX + 12, e.clientY + window.scrollY - 48, textFn(pt));
+  };
+  canvas.onmouseleave = hideTooltip;
+}
+
+function attachHoverBars(canvas, bars, textFn) {
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    let found = null;
+    for (const b of bars) {
+      if (mx >= b.x - 1 && mx <= b.x + b.width + 1) { found = b; break; }
+    }
+    if (found) {
+      showTooltip(e.clientX + window.scrollX + 12, e.clientY + window.scrollY - 64, textFn(found.pt));
+    } else {
+      hideTooltip();
+    }
+  };
+  canvas.onmouseleave = hideTooltip;
+}
+
+// ---------- Events ----------
+['capital', 'monthly', 'rate', 'years', 'hvv', 'cpi', 'forfait', 'box3rate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+
+document.getElementById('box3-enabled').addEventListener('change', render);
+
+document.getElementById('rate-slider').addEventListener('input', (e) => {
+  document.getElementById('rate').value = e.target.value;
+  render();
+});
+document.getElementById('rate').addEventListener('input', (e) => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v >= 0 && v <= 15) document.getElementById('rate-slider').value = v;
+});
+
+document.getElementById('years-slider').addEventListener('input', (e) => {
+  document.getElementById('years').value = e.target.value;
+  render();
+});
+document.getElementById('years').addEventListener('input', (e) => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v) && v >= 1 && v <= 50) document.getElementById('years-slider').value = v;
+});
+
+document.querySelectorAll('#compounding button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#compounding button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.freq = parseInt(btn.dataset.n);
+    render();
+  });
+});
+
+const methodeHelp = {
+  forfait: 'Huidige wet (t/m 2027): belast een vast fictief rendement, los van wat je werkelijk behaalt.',
+  werkelijk: 'Belast je werkelijk behaalde rendement (zoals ingevuld), naar verhouding van het deel van je vermogen boven het heffingsvrij vermogen. Benadert het stelsel vanaf 2028 en de methode van sommige andere rekentools.'
+};
+document.querySelectorAll('#methode button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#methode button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.box3Method = btn.dataset.m;
+    document.getElementById('methode-help').textContent = methodeHelp[state.box3Method];
+    render();
+  });
+});
+
+window.addEventListener('resize', render);
+
+// initiële render
+render();
+</script>
+
+</body>
+</html>
